@@ -1,6 +1,4 @@
-import * as cheerio from "cheerio"
 import {JSDOM} from "jsdom"
-import {setTimeout} from "node:timers/promises"
 import {debuglog, inspect} from "node:util"
 import puppeteer from "puppeteer"
 
@@ -8,6 +6,13 @@ var log = debuglog("debug")
 
 var url =
   "https://skyandtelescope.org/wp-content/plugins/observing-tools/jupiter_moons/jupiter.html"
+
+const moonColorMap = new Map([
+  ["#io", "red"],
+  ["#europa", "blue"],
+  ["#ganymede", "green"],
+  ["#callisto", "orange"],
+])
 
 async function clearInput(page, id) {
   log("clearing text for %s", id)
@@ -20,6 +25,73 @@ async function clearInput(page, id) {
     await page.keyboard.up("Control")
     await page.keyboard.press("Backspace")
   }
+}
+
+function appendMoonsHtml({
+  id,
+  date,
+  sourceDom,
+  dom = new JSDOM(),
+}) {
+  // append the positions in the html page
+  const listOfMoons = [
+    "#io",
+    "#europa",
+    "#ganymede",
+    "#callisto",
+  ]
+  var dateDiv = dom.window.document.createElement("div")
+  const [month, day, year] = date.split("/")
+  dateDiv.innerHTML = `${day}/${month}/${year}`
+  const resultId = `result-${id}`
+  var resultElement =
+    dom.window.document.createElement("div")
+  resultElement.setAttribute("id", resultId)
+  resultElement.style.position = "relative"
+  resultElement.style.height = "40px"
+  resultElement.style.outline = "1px solid black"
+
+  resultElement.innerHTML = ` 
+    <div class="jove" style="position: absolute; top: 10px; left: 328px; background-color: brown; width: 20px; height: 20px; border-radius: 50%; z-index:11;">
+    </div>
+  `
+
+  log("result element html %s", resultElement.outerHTML)
+
+  dom.window.document.body.appendChild(dateDiv)
+  dom.window.document.body.appendChild(resultElement)
+
+  listOfMoons.forEach(value => {
+    var e = sourceDom.window.document.querySelector(value)
+    e.innerHTML = ""
+    var style = e.getAttribute("style")
+    e.removeAttribute("id")
+    e.setAttribute("class", value)
+
+    style = style
+      .split("; ")
+      .map(s => {
+        if (s.startsWith("top")) {
+          return "top: 20px"
+        } else {
+          return s
+        }
+      })
+      .join("; ")
+
+    const modifiedStyle =
+      style +
+      "width: 10px; height: 10px; border-radius: 50%; background-color:" +
+      moonColorMap.get(value) +
+      ";"
+
+    e.removeAttribute("style")
+    e.setAttribute("style", modifiedStyle)
+    const resultEl = dom.window.document.querySelector(
+      `#${resultId}`
+    )
+    resultEl.appendChild(e)
+  })
 }
 
 async function main() {
@@ -45,8 +117,8 @@ async function main() {
   var form = await page.$("#date_time")
 
   var inpMaps = new Map([
-    ["date_txt", "06/06/2022"],
-    ["ut_h_m", "04:40"],
+    ["date_txt", "07/01/2022"],
+    ["ut_h_m", "14:30"],
     ["timezone", "5.5"],
   ])
 
@@ -62,69 +134,99 @@ async function main() {
       await page.keyboard.press("Escape")
     }
   }
+
   // click on the calculate button
   var button = await page.$(".calcBtn")
   await button.focus()
   await button.click()
 
-  for (var [key, _] of inpMaps) {
-    var value = await page.$eval(
-      `input[name=${key}]`,
-      e => e.value
+  const addOneHourButton = await page.$(
+    "tr td:last-child button"
+  )
+
+  // get html contating the position of the moons
+  var dom = new JSDOM(`
+    <html>
+      <body>
+      </body>
+    </html>
+  `)
+
+  for (let i = 0; i < 31; i++) {
+    if (i !== 0) {
+      await addOneHourButton.click()
+    }
+    var moons = await page.$eval("#moons", e => e.innerHTML)
+    var date = await page.$eval(
+      "#date_txt2",
+      el => el.value
     )
-    log("%s - %s", key, value)
+    log("generating moon position for %s", date)
+    var sourceDom = new JSDOM(moons)
+    appendMoonsHtml({
+      id: i,
+      dom,
+      sourceDom,
+      date,
+    })
   }
 
-  var moons = await page.$eval("#moons", e => e.innerHTML)
-  // append the positions in the html page
-  var $ = cheerio.load(
-    '<div id="moons" style="height: 77px; outline: 2px solid black;"></div>'
-  )
-  $("#moons").append(moons)
-  var sourceDom = new JSDOM($.root().html())
-  var dom = new JSDOM(
-    `<html><body><div id="moons" style="height: 77px; outline: 2px solid black;"></div></body></html>`
-  )
+  var info = dom.window.document.createElement("div")
+  info.className = "info"
+  info.style.cssText = `
+    display: flex;
+    width: 100%;, 
+    padding: 20px;
+    margin: 20px;
+    justify-content: center;
+    align-items: center;
+  `
 
-  const listOfMoons = [
-    "#io",
-    "#europa",
-    "#ganymede",
-    "#callisto",
-  ]
+  info.innerHTML = `
+    <div style="margin: 10">
+      Jupiter - <span style="background-color: brown; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+    </div>
+    <div style="margin: 10">
+      IO - <span style="background-color: ${moonColorMap.get(
+        "#io"
+      )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+    </div>
+    <div style="margin: 10">
+      Europa - <span style="background-color: ${moonColorMap.get(
+        "#europa"
+      )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+    </div>
+    <div style="margin: 10">
+      Ganymede - <span style="background-color: ${moonColorMap.get(
+        "#ganymede"
+      )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+    </div>
+    <div style="margin: 10">
+      Callisto - <span style="background-color: ${moonColorMap.get(
+        "#callisto"
+      )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+    </div>
+    `
 
-  const moonColorMap = new Map([
-    ["#io", "red"],
-    ["#europa", "blue"],
-    ["#ganymede", "pink"],
-    ["#callisto", "orange"],
-  ])
+  const time = dom.window.document.createElement("div")
+  time.innerHTML = `
+    <div>
+      Local Time: 08:00 PM IST
+    </div>
+  `
+  time.style.cssText = `
+    display: flex;
+    width: 100%;, 
+    padding: 20px;
+    margin: 20px;
+    justify-content: center;
+    align-items: center;
 
-  listOfMoons.forEach(function (value) {
-    var e = sourceDom.window.document.querySelector(value)
-    e.innerHTML = ""
-    var style = e.getAttribute("style")
-    const modifiedStyle =
-      style +
-      "width: 4px; height: 4px; border-radius: 50%; background-color:" +
-      moonColorMap.get(value) +
-      ";"
-
-    e.removeAttribute("style")
-    e.setAttribute("style", modifiedStyle)
-    log(modifiedStyle)
-    const resultEl =
-      dom.window.document.querySelector("#moons")
-    resultEl.appendChild(e)
-  })
-
-  log(dom.window.document.querySelector("html").outerHTML)
+  `
+  dom.window.document.body.appendChild(info)
+  dom.window.document.body.appendChild(time)
 
   const resultPage = await browser.newPage()
-  await resultPage.setViewport({
-    height: 1920,
-    width: 1080,
-  })
   await resultPage.setContent(
     dom.window.document.querySelector("html").outerHTML,
     {
@@ -132,8 +234,12 @@ async function main() {
     }
   )
 
-  await setTimeout(30 * 1000)
-  await browser.close()
+  await resultPage.screenshot({
+    path: "july-jupiter-moon.png",
+    fullPage: true,
+  })
+
+  // await browser.close()
 }
 
 main()
