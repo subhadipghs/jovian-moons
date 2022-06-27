@@ -1,3 +1,6 @@
+import * as cheerio from "cheerio"
+import {JSDOM} from "jsdom"
+import {setTimeout} from "node:timers/promises"
 import {debuglog, inspect} from "node:util"
 import puppeteer from "puppeteer"
 
@@ -22,8 +25,8 @@ async function clearInput(page, id) {
 async function main() {
   // for some reason we are about to go to the moons 🚀
   var browser = await puppeteer.launch({
-    headless: true,
-    slowMo: 50,
+    headless: false,
+    slowMo: 20,
   })
   var page = await browser.newPage()
   // go to skyandtelescope website
@@ -72,8 +75,64 @@ async function main() {
     log("%s - %s", key, value)
   }
 
-  const moons = await page.$eval("#moons", e => e.innerHTML)
-  log(moons)
+  var moons = await page.$eval("#moons", e => e.innerHTML)
+  // append the positions in the html page
+  var $ = cheerio.load(
+    '<div id="moons" style="height: 77px; outline: 2px solid black;"></div>'
+  )
+  $("#moons").append(moons)
+  var sourceDom = new JSDOM($.root().html())
+  var dom = new JSDOM(
+    `<html><body><div id="moons" style="height: 77px; outline: 2px solid black;"></div></body></html>`
+  )
+
+  const listOfMoons = [
+    "#io",
+    "#europa",
+    "#ganymede",
+    "#callisto",
+  ]
+
+  const moonColorMap = new Map([
+    ["#io", "red"],
+    ["#europa", "blue"],
+    ["#ganymede", "pink"],
+    ["#callisto", "orange"],
+  ])
+
+  listOfMoons.forEach(function (value) {
+    var e = sourceDom.window.document.querySelector(value)
+    e.innerHTML = ""
+    var style = e.getAttribute("style")
+    const modifiedStyle =
+      style +
+      "width: 4px; height: 4px; border-radius: 50%; background-color:" +
+      moonColorMap.get(value) +
+      ";"
+
+    e.removeAttribute("style")
+    e.setAttribute("style", modifiedStyle)
+    log(modifiedStyle)
+    const resultEl =
+      dom.window.document.querySelector("#moons")
+    resultEl.appendChild(e)
+  })
+
+  log(dom.window.document.querySelector("html").outerHTML)
+
+  const resultPage = await browser.newPage()
+  await resultPage.setViewport({
+    height: 1920,
+    width: 1080,
+  })
+  await resultPage.setContent(
+    dom.window.document.querySelector("html").outerHTML,
+    {
+      waitUntil: "load",
+    }
+  )
+
+  await setTimeout(30 * 1000)
   await browser.close()
 }
 
