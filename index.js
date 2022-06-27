@@ -1,7 +1,7 @@
 import {debuglog, inspect} from "node:util"
 import puppeteer from "puppeteer"
 
-var log = debuglog("app")
+var log = debuglog("debug")
 
 var url =
   "https://skyandtelescope.org/wp-content/plugins/observing-tools/jupiter_moons/jupiter.html"
@@ -71,6 +71,9 @@ async function main() {
     )
     log("%s - %s", key, value)
   }
+
+  const moons = await page.$eval("#moons", e => e.innerHTML)
+  log(moons)
   await browser.close()
 }
 
