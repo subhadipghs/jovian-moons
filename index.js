@@ -71,7 +71,6 @@ async function main() {
     )
     log("%s - %s", key, value)
   }
-  log($.root().html())
   await browser.close()
 }
 
