@@ -98,10 +98,14 @@ async function generateImage(startDate, numberOfDays, imageName, debug = false) 
   // for some reason we are about to go to the jupiter 🚀
   let browser = await puppeteer.launch({
     headless: !debug, // if debugging then show the browser window other do it headless way
-    slowMo: debug ? 20 : 0,
+    ...(debug && { slowMo: 20, args: ['--headless'] }),
   })
   let page = await browser.newPage()
   // go to skyandtelescope website
+  await page.setExtraHTTPHeaders({
+    'Accept-Language': 'en-US,en;q=0.9'
+  });
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36');
   await page.goto(url, {
     waitUntil: "load",
   })

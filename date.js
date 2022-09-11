@@ -17,7 +17,7 @@ const getNumberOfDaysInMonth = (monthIndex, year) => {
   if (isNaN(monthIndex) || isNaN(year)) {
     throw new Error("Caught excption in getNumberOfDaysInMonth. Expected arguments to be numbers.")
   }
-  if (monthIndex < 0 || monthIndex > 11) {
+  if (monthIndex < 1 || monthIndex > 12) {
     throw new Error("Invalid monthIndex provided. It should be between 0 and 11")
   }
   const d = new Date(year, monthIndex, 0)
