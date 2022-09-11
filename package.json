@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "NODE_DEBUG=debug node index.js",
-    "dev": "NODE_DEBUG=debug nodemon --exec node index.js"
+    "dev": "NODE_DEBUG=debug nodemon --exec node index.js",
+    "test": "tap tests/**/*.test.js"
   },
   "keywords": [],
   "author": "",
@@ -14,6 +15,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
     "jsdom": "^20.0.0",
+    "moment": "^2.29.4",
     "puppeteer": "^15.1.1",
     "tap": "^16.3.0"
   },

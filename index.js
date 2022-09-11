@@ -1,5 +1,5 @@
-import {JSDOM} from "jsdom"
-import {debuglog, inspect} from "node:util"
+import { JSDOM } from "jsdom"
+import { debuglog, inspect } from "node:util"
 import puppeteer from "puppeteer"
 
 var log = debuglog("debug")
@@ -95,7 +95,7 @@ function appendMoonsHtml({
 }
 
 async function main() {
-  // for some reason we are about to go to the moons 🚀
+  // for some reason we are about to go to the jupiter 🚀
   var browser = await puppeteer.launch({
     headless: false,
     slowMo: 20,
@@ -123,7 +123,7 @@ async function main() {
   ])
 
   for (var [key, value] of inpMaps) {
-    log(inspect({key: `input[name=${key}]`, value}))
+    log(inspect({ key: `input[name=${key}]`, value }))
     var input = await form.waitForSelector(
       `input[name=${key}]`
     )
@@ -188,23 +188,23 @@ async function main() {
     </div>
     <div style="margin: 10">
       IO - <span style="background-color: ${moonColorMap.get(
-        "#io"
-      )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+    "#io"
+  )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
     </div>
     <div style="margin: 10">
       Europa - <span style="background-color: ${moonColorMap.get(
-        "#europa"
-      )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+    "#europa"
+  )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
     </div>
     <div style="margin: 10">
       Ganymede - <span style="background-color: ${moonColorMap.get(
-        "#ganymede"
-      )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+    "#ganymede"
+  )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
     </div>
     <div style="margin: 10">
       Callisto - <span style="background-color: ${moonColorMap.get(
-        "#callisto"
-      )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+    "#callisto"
+  )}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
     </div>
     `
 
@@ -239,7 +239,7 @@ async function main() {
     fullPage: true,
   })
 
-  // await browser.close()
+  await browser.close()
 }
 
 main()
