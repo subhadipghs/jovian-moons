@@ -94,10 +94,10 @@ function appendMoonsHtml({
   })
 }
 
-async function generateImage(startDate, numberOfDays, imageName) {
+async function generateImage(startDate, numberOfDays, imageName, debug) {
   // for some reason we are about to go to the jupiter 🚀
   let browser = await puppeteer.launch({
-    headless: false,
+    headless: !debug, // if debugging then show the browser window other do it headless way
     slowMo: 20,
   })
   let page = await browser.newPage()

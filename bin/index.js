@@ -15,11 +15,13 @@ Usage
   
 Options
   --year,  -y   full year in number format
+  --date,  -d   date of the day 
   --name,  -n   name of the generate image 
   --month, -m   month in form of number. it should 0 based. January should be 0, Februrary 1 and so on
+  --debug,      if true then will open the brower while scrapping otherwise it'll do it headless way
 
 Examples
-  $ jupiter --month 8 --year 2022 --name september-image
+  $ jupiter --date 12 --month 8 --year 2022 --name september-image
 `, {
     importMeta: import.meta,
     flags: {
@@ -27,6 +29,17 @@ Examples
         alias: 'm',
         type: 'number',
         isRequired: true
+      },
+      date: {
+        alias: 'd',
+        type: 'number',
+        isRequired: false,
+        default: 1,
+      },
+      debug: {
+        type: 'boolean',
+        isRequired: false,
+        default: false
       },
       year: {
         alias: 'y',
@@ -41,7 +54,7 @@ Examples
     },
   })
   try {
-    const { month, year, name } = cli.flags
+    const { month, date, year, name, debug } = cli.flags
     if (isNaN(month) || month < 0 || month > 11) {
       throw new Error("Invalid month provided. It should be between 0 and 11")
     }
@@ -51,10 +64,10 @@ Examples
     if (name.length <= 0) {
       throw new Error("Invalid image name provided")
     }
-    const date = new Date(2022, 8, 1)
-    const formattedDate = formatDate(new Date(2022, 8, 1))
-    const numberOfDays = getNumberOfDaysInMonth(date.getMonth(), date.getFullYear())
-    await generateImage(formattedDate, numberOfDays, name)
+    const d = new Date(year, month, date)
+    const formattedDate = formatDate(d)
+    const numberOfDays = getNumberOfDaysInMonth(d.getMonth(), d.getFullYear())
+    await generateImage(formattedDate, numberOfDays, name, debug)
   } catch (e) {
     console.error(e)
     console.log(cli.help)
