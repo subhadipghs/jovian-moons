@@ -1,11 +1,10 @@
 import { JSDOM } from "jsdom"
 import puppeteer from "puppeteer"
 import { debuglog, inspect } from "node:util"
-import { formatDate, getNumberOfDaysInMonth } from "./date.js"
 
-var log = debuglog("debug")
+let log = debuglog("debug")
 
-var url =
+let url =
   "https://skyandtelescope.org/wp-content/plugins/observing-tools/jupiter_moons/jupiter.html"
 
 const moonColorMap = new Map([
@@ -41,11 +40,11 @@ function appendMoonsHtml({
     "#ganymede",
     "#callisto",
   ]
-  var dateDiv = dom.window.document.createElement("div")
+  let dateDiv = dom.window.document.createElement("div")
   const [month, day, year] = date.split("/")
   dateDiv.innerHTML = `${day}/${month}/${year}`
   const resultId = `result-${id}`
-  var resultElement =
+  let resultElement =
     dom.window.document.createElement("div")
   resultElement.setAttribute("id", resultId)
   resultElement.style.position = "relative"
@@ -63,9 +62,9 @@ function appendMoonsHtml({
   dom.window.document.body.appendChild(resultElement)
 
   listOfMoons.forEach(value => {
-    var e = sourceDom.window.document.querySelector(value)
+    let e = sourceDom.window.document.querySelector(value)
     e.innerHTML = ""
-    var style = e.getAttribute("style")
+    let style = e.getAttribute("style")
     e.removeAttribute("id")
     e.setAttribute("class", value)
 
@@ -95,19 +94,19 @@ function appendMoonsHtml({
   })
 }
 
-async function generateImage(startDate, numberOfDays) {
+async function generateImage(startDate, numberOfDays, imageName) {
   // for some reason we are about to go to the jupiter 🚀
-  var browser = await puppeteer.launch({
+  let browser = await puppeteer.launch({
     headless: false,
     slowMo: 20,
   })
-  var page = await browser.newPage()
+  let page = await browser.newPage()
   // go to skyandtelescope website
   await page.goto(url, {
     waitUntil: "load",
   })
-  var header = await page.$("#header")
-  var text = await header.$eval(
+  let header = await page.$("#header")
+  let text = await header.$eval(
     ".title-text",
     node => node.innerHTML
   )
@@ -115,17 +114,17 @@ async function generateImage(startDate, numberOfDays) {
 
   await page.waitForSelector("#date_time")
 
-  var form = await page.$("#date_time")
+  let form = await page.$("#date_time")
 
-  var inpMaps = new Map([
+  let inpMaps = new Map([
     ["date_txt", startDate],
     ["ut_h_m", "14:30"],
     ["timezone", "5.5"],
   ])
 
-  for (var [key, value] of inpMaps) {
+  for (let [key, value] of inpMaps) {
     log(inspect({ key: `input[name=${key}]`, value }))
-    var input = await form.waitForSelector(
+    let input = await form.waitForSelector(
       `input[name=${key}]`
     )
     // clear the input first
@@ -137,7 +136,7 @@ async function generateImage(startDate, numberOfDays) {
   }
 
   // click on the calculate button
-  var button = await page.$(".calcBtn")
+  let button = await page.$(".calcBtn")
   await button.focus()
   await button.click()
 
@@ -146,7 +145,7 @@ async function generateImage(startDate, numberOfDays) {
   )
 
   // get html contating the position of the moons
-  var dom = new JSDOM(`
+  let dom = new JSDOM(`
     <html>
       <body>
       </body>
@@ -157,13 +156,13 @@ async function generateImage(startDate, numberOfDays) {
     if (i !== 0) {
       await addOneHourButton.click()
     }
-    var moons = await page.$eval("#moons", e => e.innerHTML)
-    var date = await page.$eval(
+    let moons = await page.$eval("#moons", e => e.innerHTML)
+    let date = await page.$eval(
       "#date_txt2",
       el => el.value
     )
     log("generating moon position for %s", date)
-    var sourceDom = new JSDOM(moons)
+    let sourceDom = new JSDOM(moons)
     appendMoonsHtml({
       id: i,
       dom,
@@ -172,7 +171,7 @@ async function generateImage(startDate, numberOfDays) {
     })
   }
 
-  var info = dom.window.document.createElement("div")
+  let info = dom.window.document.createElement("div")
   info.className = "info"
   info.style.cssText = `
     display: flex;
@@ -236,23 +235,11 @@ async function generateImage(startDate, numberOfDays) {
   )
 
   await resultPage.screenshot({
-    path: "july-jupiter-moon.png",
+    path: `${imageName}.jpg` || "jovian-moons.jpg",
     fullPage: true,
   })
 
   await browser.close()
 }
 
-async function main() {
-  try {
-    const date = new Date(2022, 8, 1)
-    const formattedDate = formatDate(new Date(2022, 8, 1))
-    const numberOfDays = getNumberOfDaysInMonth(date.getMonth(), date.getFullYear())
-    await generateImage(formattedDate, numberOfDays)
-  } catch (e) {
-    log(e)
-  }
-}
-
-
-main()
+export { generateImage }
