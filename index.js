@@ -1,6 +1,7 @@
 import { JSDOM } from "jsdom"
-import { debuglog, inspect } from "node:util"
 import puppeteer from "puppeteer"
+import { debuglog, inspect } from "node:util"
+import { formatDate, getNumberOfDaysInMonth } from "./date.js"
 
 var log = debuglog("debug")
 
@@ -94,7 +95,7 @@ function appendMoonsHtml({
   })
 }
 
-async function main() {
+async function generateImage(startDate, numberOfDays) {
   // for some reason we are about to go to the jupiter 🚀
   var browser = await puppeteer.launch({
     headless: false,
@@ -117,7 +118,7 @@ async function main() {
   var form = await page.$("#date_time")
 
   var inpMaps = new Map([
-    ["date_txt", "07/01/2022"],
+    ["date_txt", startDate],
     ["ut_h_m", "14:30"],
     ["timezone", "5.5"],
   ])
@@ -152,7 +153,7 @@ async function main() {
     </html>
   `)
 
-  for (let i = 0; i < 31; i++) {
+  for (let i = 0; i < numberOfDays; i++) {
     if (i !== 0) {
       await addOneHourButton.click()
     }
@@ -241,5 +242,17 @@ async function main() {
 
   await browser.close()
 }
+
+async function main() {
+  try {
+    const date = new Date(2022, 8, 1)
+    const formattedDate = formatDate(new Date(2022, 8, 1))
+    const numberOfDays = getNumberOfDaysInMonth(date.getMonth(), date.getFullYear())
+    await generateImage(formattedDate, numberOfDays)
+  } catch (e) {
+    log(e)
+  }
+}
+
 
 main()
