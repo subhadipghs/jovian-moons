@@ -66,7 +66,7 @@ Examples
     }
     const d = new Date(year, month, date)
     const formattedDate = formatDate(d)
-    const numberOfDays = getNumberOfDaysInMonth(d.getMonth(), d.getFullYear())
+    const numberOfDays = getNumberOfDaysInMonth(d.getMonth() + 1, d.getFullYear())
     await generateImage(formattedDate, numberOfDays, name, debug)
   } catch (e) {
     console.error(e)
